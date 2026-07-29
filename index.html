@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mapa mental — NIA 501</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#eae4d6;
+    --ink-dim:#a9a08c;
+    --bg-0:#12161d;
+    --bg-1:#181e27;
+    --gold:#d1a24a;
+    --gold-dim:#8a6d38;
+    --teal:#2f8f86;
+    --teal-dark:#123f3b;
+    --teal-text:#dff5f2;
+    --amber:#c96a3a;
+    --amber-dark:#4a2416;
+    --amber-text:#fbe7d8;
+    --seal:#e3b25e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg-0);}
+  body{
+    font-family:'IBM Plex Sans', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding:56px 24px 80px;
+    position:relative;
+    overflow-x:hidden;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(209,162,74,0.10), transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(47,143,134,0.10), transparent 50%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1) 60%, var(--bg-0));
+  }
+  /* ledger grain */
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 28px);
+  }
+ 
+  .wrap{ max-width:1180px; margin:0 auto; position:relative; z-index:1; }
+ 
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.32em; text-transform:uppercase;
+    color:var(--gold); text-align:center; margin-bottom:14px;
+    display:flex; align-items:center; justify-content:center; gap:14px;
+  }
+  .eyebrow::before, .eyebrow::after{ content:""; width:44px; height:1px; background:var(--gold-dim); }
+ 
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:400;
+    font-size:clamp(34px, 5.4vw, 58px);
+    text-align:center;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  h1 b{ font-weight:600; color:var(--seal); }
+ 
+  .subtitle{
+    text-align:center;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:400;
+    color:var(--ink-dim);
+    font-size:16px;
+    max-width:560px;
+    margin:0 auto 56px;
+  }
+ 
+  /* ---- hive ---- */
+  .stage{
+    display:flex;
+    align-items:flex-start;
+    gap:0;
+    max-width:1480px;
+    margin:0 auto;
+  }
+  .hive{
+    position:relative;
+    flex:1 1 auto;
+    min-width:0;
+    max-width:1100px;
+    margin:0 auto;
+    aspect-ratio: 1100 / 640;
+    transition:max-width .5s ease;
+  }
+  .stage.panel-open .hive{ max-width:800px; }
+  .hive svg.lines{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; z-index:0; }
+  .lines path{
+    fill:none; stroke:rgba(209,162,74,0.35); stroke-width:1.4; stroke-dasharray:2 6; stroke-linecap:round;
+  }
+ 
+  .node{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    z-index:2;
+  }
+  .hex{
+    width:100%; height:100%;
+    clip-path:polygon(25% 3%, 75% 3%, 99% 50%, 75% 97%, 25% 97%, 1% 50%);
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    position:relative;
+    transition:transform .35s ease, filter .35s ease, box-shadow .35s ease;
+  }
+  .node[data-key]{ cursor:pointer; }
+  .node:hover .hex{ transform:scale(1.06); filter:brightness(1.12); }
+  .node.active .hex{ transform:scale(1.08); filter:brightness(1.18); }
+  .node.active .hex::after{
+    content:""; position:absolute; inset:-8px;
+    clip-path:polygon(25% 3%, 75% 3%, 99% 50%, 75% 97%, 25% 97%, 1% 50%);
+    box-shadow:0 0 0 2px var(--gold);
+    pointer-events:none;
+  }
+  .stamp.active .hex::after{ inset:-5px; }
+ 
+  .hex-inner{ padding:6% 14%; }
+  .hex-title{ font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:15px; line-height:1.25; }
+  .hex-sub{ font-family:'IBM Plex Sans', sans-serif; font-weight:400; font-size:11px; opacity:0.82; margin-top:5px; line-height:1.3; }
+ 
+  /* center seal */
+  .center{ width:210px; height:210px; left:50%; top:50%; }
+  .center .hex{
+    background:
+      radial-gradient(circle at 35% 25%, rgba(255,255,255,0.35), transparent 45%),
+      conic-gradient(from 220deg, var(--seal), var(--gold-dim), var(--seal));
+    box-shadow: 0 0 0 6px rgba(18,22,29,0.9), 0 0 0 8px rgba(209,162,74,0.4), 0 16px 40px rgba(0,0,0,0.45);
+  }
+  .center .hex-title{ font-family:'Fraunces', serif; font-size:22px; color:#241505; }
+  .center .hex-sub{ color:#3a230c; font-weight:500; }
+  @media (prefers-reduced-motion:no-preference){
+    .center .hex{ animation: seal-glow 4.5s ease-in-out infinite; }
+  }
+  @keyframes seal-glow{
+    0%,100%{ box-shadow:0 0 0 6px rgba(18,22,29,0.9), 0 0 0 8px rgba(209,162,74,0.4), 0 16px 40px rgba(0,0,0,0.45); }
+    50%{ box-shadow:0 0 0 6px rgba(18,22,29,0.9), 0 0 0 10px rgba(209,162,74,0.65), 0 20px 52px rgba(209,162,74,0.18); }
+  }
+ 
+  /* teal group — marco normativo */
+  .teal .hex{
+    background:linear-gradient(160deg, var(--teal), var(--teal-dark));
+    box-shadow:0 10px 26px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .teal .hex-title, .teal .hex-sub{ color:var(--teal-text); }
+ 
+  /* amber group — areas de evidencia */
+  .amber .hex{
+    background:linear-gradient(160deg, var(--amber), var(--amber-dark));
+    box-shadow:0 10px 26px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .amber .hex-title, .amber .hex-sub{ color:var(--amber-text); }
+ 
+  .n1{ width:172px; height:172px; }
+  .n2{ width:184px; height:184px; }
+ 
+  /* reference stamp (small hex) */
+  .stamp{
+    position:absolute;
+    width:58px; height:58px;
+    transform:translate(-50%,-50%);
+    z-index:3;
+  }
+  .stamp .hex{
+    background:var(--bg-1);
+    box-shadow:0 0 0 1px rgba(209,162,74,0.5), 0 6px 14px rgba(0,0,0,0.35);
+  }
+  .stamp .hex-inner{ padding:0; }
+  .stamp .code{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px; font-weight:500; letter-spacing:0.02em;
+    color:var(--gold);
+  }
+ 
+  /* ---- detail panel (rail) ---- */
+  .panel{
+    width:0;
+    flex:0 0 auto;
+    max-height:none;
+    opacity:0;
+    overflow:hidden;
+    align-self:stretch;
+    transition:width .5s cubic-bezier(.2,.7,.3,1), opacity .35s ease, margin-left .5s ease;
+  }
+  .panel.open{
+    width:380px;
+    opacity:1;
+    margin-left:28px;
+  }
+  .panel-card{
+    position:relative;
+    height:100%;
+    min-height:420px;
+    width:380px;
+    background:linear-gradient(160deg, rgba(234,228,214,0.05), rgba(234,228,214,0.02));
+    border:1px solid rgba(209,162,74,0.35);
+    border-radius:4px;
+    padding:30px 30px 26px 34px;
+    overflow-y:auto;
+  }
+  .panel-card::before{
+    content:"";
+    position:absolute; left:0; top:14px; bottom:14px; width:3px;
+    background:var(--gold);
+  }
+  .panel-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; letter-spacing:0.22em; text-transform:uppercase;
+    color:var(--gold); margin-bottom:8px; display:block;
+  }
+  .panel-title{
+    font-family:'Fraunces', serif;
+    font-size:23px; margin:0 0 14px;
+    line-height:1.2;
+  }
+  .panel-body{
+    font-size:14px; line-height:1.75; color:var(--ink);
+    opacity:0.92;
+  }
+  .panel-body ul{ margin:10px 0 0; padding-left:20px; }
+  .panel-body li{ margin-bottom:8px; }
+  .panel-close{
+    position:absolute; top:16px; right:18px;
+    background:none; border:none; color:var(--ink-dim);
+    font-size:20px; line-height:1; cursor:pointer;
+    transition:color .2s ease;
+  }
+  .panel-close:hover{ color:var(--gold); }
+ 
+  @media (max-width:960px){
+    .stage{ flex-direction:column; }
+    .stage.panel-open .hive{ max-width:1100px; }
+    .panel.open{ width:100%; margin-left:0; margin-top:30px; }
+    .panel-card{ width:100%; min-height:0; }
+  }
+ 
+  .hint{
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    max-width:fit-content; margin:0 auto 40px;
+    padding:14px 26px;
+    border:1px solid rgba(209,162,74,0.4);
+    border-radius:999px;
+    background:rgba(209,162,74,0.07);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px; letter-spacing:0.05em;
+    color:var(--ink);
+    transition:opacity .4s ease, visibility .4s ease;
+  }
+  .hint.faded{ opacity:0; visibility:hidden; }
+  .hint i{ color:var(--gold); font-size:20px; }
+  .hint .dot{
+    width:8px; height:8px; border-radius:50%; background:var(--gold);
+    flex:0 0 auto;
+  }
+ 
+  @media (max-width:600px){
+    .hint{ font-size:12.5px; padding:11px 18px; gap:8px; text-align:center; }
+    .hint i{ font-size:17px; }
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .hint .dot{ animation:pulse-dot 1.6s ease-in-out infinite; }
+  }
+  @keyframes pulse-dot{
+    0%,100%{ opacity:0.4; transform:scale(0.85); }
+    50%{ opacity:1; transform:scale(1.15); }
+  }
+ 
+  footer{
+    text-align:center; margin-top:56px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.08em;
+    color:var(--ink-dim);
+  }
+  footer span{ color:var(--gold); }
+ 
+  @media (max-width:720px){
+    .hive{ transform:scale(0.72); transform-origin:top center; margin-bottom:-160px; }
+  }
+  @media (max-width:480px){
+    .hive{ transform:scale(0.52); margin-bottom:-280px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Norma internacional de auditoría</div>
+  <h1>Mapa mental <b>NIA 501</b></h1>
+  <p class="subtitle">Evidencia de auditoría — consideraciones específicas para existencias, litigios y reclamaciones, y la información por segmentos</p>
+ 
+  <div class="hint" id="hint">
+    <i class="ti ti-hand-click" aria-hidden="true"></i>
+    <span>Da clic en un hexágono para ver el contenido ampliado</span>
+    <span class="dot"></span>
+  </div>
+ 
+  <div class="stage" id="stage">
+  <div class="hive">
+    <svg class="lines" viewBox="0 0 1100 640" preserveAspectRatio="none">
+      <path d="M550 320 L407 160"/>
+      <path d="M550 320 L286 320"/>
+      <path d="M550 320 L407 480"/>
+      <path d="M550 320 L693 160"/>
+      <path d="M550 320 L814 320"/>
+      <path d="M550 320 L693 480"/>
+    </svg>
+ 
+    <div class="node center" data-key="intro" style="left:50%; top:50%;">
+      <div class="hex"><div class="hex-inner">
+        <div class="hex-title">NIA 501</div>
+        <div class="hex-sub">Evidencia de auditoría</div>
+      </div></div>
+    </div>
+ 
+    <!-- Marco normativo (izquierda, teal) -->
+    <div class="node teal n1" data-key="alcance" style="left:37%; top:25%;">
+      <div class="hex"><div class="hex-inner">
+        <div class="hex-title">Alcance</div>
+        <div class="hex-sub">Existencias, litigios y segmentos</div>
+      </div></div>
+    </div>
+    <div class="node teal n2" data-key="objetivo" style="left:26%; top:50%;">
+      <div class="hex"><div class="hex-inner">
+        <div class="hex-title">Objetivo</div>
+        <div class="hex-sub">Evidencia suficiente y adecuada</div>
+      </div></div>
+    </div>
+    <div class="node teal n1" data-key="vigencia" style="left:37%; top:75%;">
+      <div class="hex"><div class="hex-inner">
+        <div class="hex-title">Entrada en vigor</div>
+        <div class="hex-sub">Periodos desde el 15 dic. 2009</div>
+      </div></div>
+    </div>
+ 
+    <!-- Areas de evidencia (derecha, amber) -->
+    <div class="node amber n1" data-key="existencias" style="left:63%; top:25%;">
+      <div class="hex"><div class="hex-inner">
+        <div class="hex-title">Existencias</div>
+        <div class="hex-sub">Recuento físico y terceros</div>
+      </div></div>
+    </div>
+    <div class="node amber n2" data-key="litigios" style="left:74%; top:50%;">
+      <div class="hex"><div class="hex-inner">
+        <div class="hex-title">Litigios y reclamaciones</div>
+        <div class="hex-sub">Indagación, asesores y manifestaciones escritas</div>
+      </div></div>
+    </div>
+    <div class="node amber n1" data-key="segmentos" style="left:63%; top:75%;">
+      <div class="hex"><div class="hex-inner">
+        <div class="hex-title">Segmentos</div>
+        <div class="hex-sub">Métodos y procedimientos analíticos</div>
+      </div></div>
+    </div>
+ 
+    <!-- stamps: referencias (abren el mismo detalle que su hexágono principal) -->
+    <div class="stamp" data-key="alcance" style="left:29%; top:12%;"><div class="hex"><div class="hex-inner"><span class="code">Ap.1</span></div></div></div>
+    <div class="stamp" data-key="objetivo" style="left:14%; top:50%;"><div class="hex"><div class="hex-inner"><span class="code">Ap.3</span></div></div></div>
+    <div class="stamp" data-key="vigencia" style="left:29%; top:88%;"><div class="hex"><div class="hex-inner"><span class="code">Ap.2</span></div></div></div>
+ 
+    <div class="stamp" data-key="existencias" style="left:71%; top:12%;"><div class="hex"><div class="hex-inner"><span class="code">Ap.4-8</span></div></div></div>
+    <div class="stamp" data-key="litigios" style="left:87%; top:50%;"><div class="hex"><div class="hex-inner"><span class="code">Ap.9-12</span></div></div></div>
+    <div class="stamp" data-key="segmentos" style="left:71%; top:88%;"><div class="hex"><div class="hex-inner"><span class="code">Ap.13</span></div></div></div>
+  </div>
+ 
+  <div class="panel" id="panel">
+    <div class="panel-card">
+      <button class="panel-close" id="panelClose" aria-label="Cerrar">&times;</button>
+      <span class="panel-eyebrow" id="panelRef"></span>
+      <h3 class="panel-title" id="panelTitle"></h3>
+      <div class="panel-body" id="panelBody"></div>
+    </div>
+  </div>
+  </div>
+ 
+  <footer>Se interpreta junto con <span>NIA 200 · 330 · 500 · 505 · 540 · 600 · 620 · 700 · 705</span></footer>
+</div>
+ 
+<script>
+  const detail = {
+    intro: {
+      ref: "Introducción",
+      title: "NIA 501 — Evidencia de auditoría",
+      body: `<p>Esta norma trata las consideraciones específicas que el auditor debe tener en cuenta al obtener evidencia de auditoría suficiente y adecuada, en línea con la NIA 330 y la NIA 500, respecto a tres áreas concretas: las existencias, los litigios y reclamaciones, y la información por segmentos.</p><p>Se interpreta siempre junto con la NIA 200, sobre los objetivos globales del auditor independiente.</p>`
+    },
+    alcance: {
+      ref: "Apartado 1 · Alcance",
+      title: "Alcance de la norma",
+      body: `<p>Define el terreno que cubre la NIA 501: no regula toda la auditoría, sino tres puntos donde la evidencia suele ser más difícil de obtener por su naturaleza física, legal o de presentación:</p>
+      <ul>
+        <li>La realidad y el estado de las existencias</li>
+        <li>Los litigios y reclamaciones que afectan a la entidad</li>
+        <li>La presentación de la información por segmentos</li>
+      </ul>`
+    },
+    objetivo: {
+      ref: "Apartado 3 · Objetivo",
+      title: "Objetivo del auditor",
+      body: `<p>El auditor debe obtener evidencia de auditoría suficiente y adecuada sobre:</p>
+      <ul>
+        <li><b>(a)</b> la realidad y el estado de las existencias</li>
+        <li><b>(b)</b> la totalidad de los litigios y reclamaciones en los que interviene la entidad</li>
+        <li><b>(c)</b> la presentación y revelación de la información por segmentos, conforme al marco de información financiera aplicable</li>
+      </ul>`
+    },
+    vigencia: {
+      ref: "Apartado 2 · Fecha de entrada en vigor",
+      title: "Entrada en vigor",
+      body: `<p>Esta NIA se aplica a las auditorías de estados financieros correspondientes a periodos iniciados a partir del <b>15 de diciembre de 2009</b>.</p>`
+    },
+    existencias: {
+      ref: "Apartados 4–8 · Guía A1–A16",
+      title: "Existencias",
+      body: `<p>Si las existencias son materiales, el auditor obtiene evidencia sobre su realidad y estado mediante:</p>
+      <ul>
+        <li><b>Presencia en el recuento físico</b>: evaluar las instrucciones de la dirección, observar el conteo, inspeccionar las existencias y realizar pruebas de recuento propias</li>
+        <li>Aplicar procedimientos a los registros finales para verificar que reflejan el resultado real del recuento</li>
+        <li>Si el recuento se hace en una fecha distinta a la de los estados financieros, comprobar que las variaciones posteriores se registraron correctamente</li>
+        <li>Si no es factible presenciar el recuento, aplicar procedimientos alternativos; si tampoco es posible obtener evidencia suficiente, el auditor expresa una <b>opinión modificada</b> (NIA 705)</li>
+        <li>Para existencias en poder de terceros: solicitar confirmación externa o inspeccionar la documentación correspondiente</li>
+      </ul>`
+    },
+    litigios: {
+      ref: "Apartados 9–12 · Guía A17–A25",
+      title: "Litigios y reclamaciones",
+      body: `<p>El auditor diseña procedimientos para identificar litigios y reclamaciones con riesgo de incorrección material:</p>
+      <ul>
+        <li>Indagaciones ante la dirección y los asesores jurídicos internos</li>
+        <li>Revisión de actas de los responsables del gobierno y de la correspondencia con asesores externos</li>
+        <li>Revisión de las cuentas de gastos jurídicos</li>
+        <li>Si hay riesgo material, comunicación directa con los asesores jurídicos externos mediante una <b>carta de indagación</b></li>
+        <li>Si la dirección lo rehúsa o no se obtiene evidencia suficiente, opinión modificada (NIA 705)</li>
+        <li><b>Manifestaciones escritas</b> (Ap. 12): la dirección confirma por escrito que se han revelado y contabilizado todos los litigios y reclamaciones conocidos</li>
+      </ul>`
+    },
+    segmentos: {
+      ref: "Apartado 13 · Guía A26–A27",
+      title: "Información por segmentos",
+      body: `<p>El auditor obtiene evidencia suficiente y adecuada sobre la presentación de la información por segmentos mediante:</p>
+      <ul>
+        <li>Obtener conocimiento de los métodos que usa la dirección para determinar la información por segmentos</li>
+        <li>Evaluar si esos métodos pueden generar información acorde con el marco de información financiera aplicable</li>
+        <li>Comprobar, en su caso, la aplicación real de dichos métodos</li>
+        <li>Aplicar procedimientos analíticos u otros procedimientos adecuados según las circunstancias</li>
+      </ul>`
+    }
+  };
+ 
+  const stage = document.getElementById('stage');
+  const panel = document.getElementById('panel');
+  const panelRef = document.getElementById('panelRef');
+  const panelTitle = document.getElementById('panelTitle');
+  const panelBody = document.getElementById('panelBody');
+  const nodes = document.querySelectorAll('[data-key]');
+ 
+  const hint = document.getElementById('hint');
+ 
+  function openDetail(key){
+    const d = detail[key];
+    if(!d) return;
+    panelRef.textContent = d.ref;
+    panelTitle.textContent = d.title;
+    panelBody.innerHTML = d.body;
+    panel.classList.add('open');
+    stage.classList.add('panel-open');
+    hint.classList.add('faded');
+ 
+    nodes.forEach(n => n.classList.toggle('active', n.getAttribute('data-key') === key));
+  }
+ 
+  nodes.forEach(n => {
+    n.addEventListener('click', () => openDetail(n.getAttribute('data-key')));
+  });
+ 
+  document.getElementById('panelClose').addEventListener('click', (e) => {
+    e.stopPropagation();
+    panel.classList.remove('open');
+    stage.classList.remove('panel-open');
+    nodes.forEach(n => n.classList.remove('active'));
+  });
+</script>
+</body>
+</html>
+ 
